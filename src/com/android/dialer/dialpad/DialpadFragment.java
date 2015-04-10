@@ -22,6 +22,7 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.Fragment;
 import android.content.BroadcastReceiver;
+import android.app.Service;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -89,6 +90,7 @@ import com.android.dialer.util.DialerUtils;
 import com.android.internal.telephony.PhoneConstants;
 import com.android.dialer.calllog.PhoneAccountUtils;
 import com.android.dialer.util.DialerUtils;
+import com.cmremix.ProximitySensorManager;
 import com.android.phone.common.CallLogAsync;
 import com.android.phone.common.HapticFeedback;
 import com.android.phone.common.animation.AnimUtils;
@@ -109,7 +111,8 @@ public class DialpadFragment extends Fragment
         View.OnLongClickListener, View.OnKeyListener,
         AdapterView.OnItemClickListener, TextWatcher,
         PopupMenu.OnMenuItemClickListener,
-        DialpadKeyButton.OnPressedListener {
+        DialpadKeyButton.OnPressedListener,
+        ProximitySensorManager.ProximitySensorListener {
     private static final String TAG = DialpadFragment.class.getSimpleName();
 
     private Context mContext;
@@ -150,6 +153,8 @@ public class DialpadFragment extends Fragment
     }
 
     private static final boolean DEBUG = DialtactsActivity.DEBUG;
+
+    private ProximitySensorManager mProximitySensorManager;
 
     // This is the amount of screen the dialpad fragment takes up when fully displayed
     private static final float DIALPAD_SLIDE_FRACTION = 0.67f;
@@ -330,6 +335,9 @@ public class DialpadFragment extends Fragment
     @Override
     public void onCreate(Bundle state) {
         super.onCreate(state);
+
+        mProximitySensorManager = new ProximitySensorManager(getActivity(), this);
+
         mFirstLaunch = true;
         mCurrentCountryIso = GeoUtil.getCurrentCountryIso(getActivity());
 
@@ -651,6 +659,11 @@ public class DialpadFragment extends Fragment
 
         final ContentResolver contentResolver = activity.getContentResolver();
 
+        if (Settings.CMREMIX.getInt(contentResolver, Settings.CMREMIX.DIRECT_CALL_FOR_DIALER, 0) == 1
+              && !isPhoneInUse()) {
+            mProximitySensorManager.enable();
+        }
+
         // retrieve the DTMF tone play back setting.
         mDTMFToneEnabled = Settings.System.getInt(contentResolver,
                 Settings.System.DTMF_TONE_WHEN_DIALING, 1) == 1;
@@ -698,6 +711,9 @@ public class DialpadFragment extends Fragment
     @Override
     public void onPause() {
         super.onPause();
+
+        // always disable just to make sure we never keep it alive
+        mProximitySensorManager.disable();
 
         // Make sure we don't leave this activity with a tone still playing.
         stopTone();
@@ -1872,5 +1888,13 @@ public class DialpadFragment extends Fragment
                 })
                 .setNegativeButton(R.string.no, null)
                 .show();
+    }
+
+    @Override
+    public void onPickup() {
+        if (!isDigitsEmpty()) {
+            mProximitySensorManager.disable();
+            dialButtonPressed();
+        }
     }
 }
