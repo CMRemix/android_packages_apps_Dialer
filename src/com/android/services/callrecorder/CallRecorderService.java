@@ -57,8 +57,6 @@ public class CallRecorderService extends Service {
 
     private SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyMMdd_HHmmssSSS");
 
-    private int mDefaultEncoder;
-
     private final ICallRecorderService.Stub mBinder = new ICallRecorderService.Stub() {
         @Override
         public CallRecording stopRecording() {
