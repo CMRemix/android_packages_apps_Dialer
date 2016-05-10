@@ -307,6 +307,7 @@ public class DialerSettingsActivity extends PreferenceActivity {
             Header noteHeader = new Header();
             noteHeader.title = mDeepLinkPluginInfo.get(0);
             noteHeader.summaryRes = R.string.note_mod_settings_summary;
+            noteHeader.id = R.id.note_preference_id;
             target.add(noteHeader);
         }
 
@@ -502,12 +503,7 @@ public class DialerSettingsActivity extends PreferenceActivity {
                     // do nothing
                 } else {
                     // Activate the provider
-                    Intent i = new Intent(getContext(), CallerInfoProviderPicker.class);
-                    i.putExtra(CallerInfoProviderPicker.EXTRA_PROVIDER_INFO,
-                            mCallerInfoProvider.getComponentName());
-                    i.putExtra(CallerInfoProviderPicker.EXTRA_METRICS_REASON,
-                            CallerInfoProviderPicker.REASON_DIALER_SETTINGS);
-                    ((Activity) getContext()).startActivityForResult(i, 0);
+                    CallerInfoProviderPicker.onSettingEnabled(getContext());
                 }
             } else if (header.titleRes == R.string.silence_spam_title) {
                 if (status == com.cyanogen.ambient.callerinfo.util.PluginStatus.ACTIVE) {
@@ -590,6 +586,9 @@ public class DialerSettingsActivity extends PreferenceActivity {
                                 }
                             }
                         });
+                    } else if (header.id == R.id.note_preference_id){
+                        holder.header = header;
+                        view.setOnClickListener(this);
                     }
                     break;
             }
